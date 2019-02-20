@@ -1,0 +1,2 @@
+# CalculatorWS
+Calculator webservice - SOAP
