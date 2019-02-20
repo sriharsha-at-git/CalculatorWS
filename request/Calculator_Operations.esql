@@ -1,0 +1,37 @@
+BROKER SCHEMA request
+
+CREATE COMPUTE MODULE Add_Request_Response_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET OutputRoot.XMLNSC = InputRoot.XMLNSC;
+		SET OutputRoot.XMLNSC.*.(XMLNSC.Attribute)broker = BrokerName;
+		RETURN TRUE;
+	END;
+END MODULE;
+
+CREATE COMPUTE MODULE Sub_Request_Response_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET OutputRoot.XMLNSC = InputRoot.XMLNSC;
+		SET OutputRoot.XMLNSC.*.(XMLNSC.Attribute)broker = BrokerName;
+		RETURN TRUE;
+	END;
+END MODULE;
+
+CREATE COMPUTE MODULE Mul_Request_Response_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET OutputRoot.XMLNSC = InputRoot.XMLNSC;
+		SET OutputRoot.XMLNSC.*.(XMLNSC.Attribute)broker = BrokerName;
+		RETURN TRUE;
+	END;
+END MODULE;
+
+CREATE COMPUTE MODULE Div_Request_Response_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET OutputRoot.XMLNSC = InputRoot.XMLNSC;
+		SET OutputRoot.XMLNSC.*.(XMLNSC.Attribute)broker = BrokerName;
+		RETURN TRUE;
+	END;
+END MODULE;

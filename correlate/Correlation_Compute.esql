@@ -1,0 +1,88 @@
+BROKER SCHEMA correlate
+DECLARE REQ_TYPE CONSTANT CHAR 'Request';
+DECLARE RSP_TYPE CONSTANT CHAR 'Response';
+DECLARE SOAP CONSTANT CHAR 'SOAP';
+DECLARE HTTP CONSTANT CHAR 'HTTP';
+
+CREATE COMPUTE MODULE SetCorrelationDataForSoap
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET Environment.Context.Message.AppName = ApplicationLabel;
+		SET Environment.Context.Message.FlowName = MessageFlowLabel;
+		SET Environment.Context.Message.FlowType = SOAP;
+		SET Environment.Context.Message.MsgType = REQ_TYPE;
+		SET Environment.Context.Message.ReqProcesser = BrokerName;
+		SET Environment.Context.Message.ReplyIdentifier = CAST(InputLocalEnvironment.Destination.SOAP.Reply.ReplyIdentifier AS CHAR);
+		SET OutputRoot = InputRoot;
+		RETURN TRUE;
+	END;
+
+END MODULE;
+
+CREATE COMPUTE MODULE SetCorrelationDataForHttp
+	DECLARE ADD CONSTANT CHAR 'Add';
+	DECLARE SUB CONSTANT CHAR 'Subtract';
+	DECLARE MUL CONSTANT CHAR 'Multiply';
+	DECLARE DIV CONSTANT CHAR 'Divide';
+
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET Environment.Context.Message.AppName = ApplicationLabel;
+		SET Environment.Context.Message.FlowName = MessageFlowLabel;
+		SET Environment.Context.Message.FlowType = HTTP;
+		SET Environment.Context.Message.MsgType = REQ_TYPE;
+		SET Environment.Context.Message.ReqProcesser = BrokerName;
+		SET Environment.Context.Message.RequestIdentifier = CAST(InputLocalEnvironment.Destination.HTTP.RequestIdentifier AS CHAR);
+		SET OutputRoot = InputRoot;
+		DECLARE operation CHAR FIELDNAME(InputRoot.XMLNSC.[<]);
+		IF (operation = ADD) THEN
+			 SET OutputLocalEnvironment.Destination.RouterList.DestinationData."label" = ADD;
+		ELSEIF (operation = SUB) THEN
+			SET OutputLocalEnvironment.Destination.RouterList.DestinationData."label" = SUB;
+		ELSEIF(operation = MUL) THEN
+			SET OutputLocalEnvironment.Destination.RouterList.DestinationData."label" = MUL;
+		ELSEIF(operation = DIV) THEN
+			SET OutputLocalEnvironment.Destination.RouterList.DestinationData."label" = DIV;
+		END IF;
+		
+		
+		RETURN TRUE;
+	END;
+
+END MODULE;
+
+
+CREATE COMPUTE MODULE SaveCorrelationData
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		CALL CopyMessageHeaders();	    
+		DECLARE mqmdRef REFERENCE TO OutputRoot.MQMD;
+		SET mqmdRef.MsgType = MQMT_DATAGRAM;
+		
+		--IF inRef.MQMD.Expiry IS NOT NULL AND CAST(inRef.MQMD.Expiry AS INTEGER) > 0 THEN
+			--SET mqmdRef.Expiry = CAST(inRef.MQMD.Expiry AS INTEGER) + 50;
+		--END IF;
+		
+		SET mqmdRef.MsgId = InputLocalEnvironment.WrittenDestination.MQ.DestinationData[1].msgId;
+		SET mqmdRef.CorrelId = InputLocalEnvironment.WrittenDestination.MQ.DestinationData[1].msgId;
+		                
+		SET OutputRoot.XMLNSC.Message.*[] = Environment.Context.Message.*[];
+		
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
+
